@@ -21,4 +21,4 @@ def stochastic(high, low, close, window_k, window_d, window_smooth):
     stoch_k = stoch_k.rolling(window_smooth, min_periods=window_smooth).mean()
 
     stoch_d = stoch_k.rolling(window_d, min_periods=window_d).mean()
-    return stoch_k, stoch_d  # This is a mock test
+    return stoch_k, stoch_d

@@ -13,7 +13,10 @@ def rsi(close, window):
     return rsi_ret
 
 
-def stochastic(high, low, close, window_k, window_d, window_smooth):
+def stochastic(high, low, close, windows):
+    window_k = windows[0]
+    window_d = windows[1]
+    window_smooth = windows[2]
     smin = low.rolling(window_k, min_periods=window_k).min()
     smax = high.rolling(window_k, min_periods=window_k).max()
     stoch_k = 100 * (close - smin) / (smax - smin)

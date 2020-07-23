@@ -44,8 +44,8 @@ def adx(high, low, close, window):
     df_temp = pd.DataFrame()
     df_temp["High"] = hd
     df_temp["Low"] = ld
-    df_temp["dx+"] = np.where((df_temp["High"]>0.0) & (df_temp["High"]>df_temp["Low"]), df_temp["High"], 0.0)
-    df_temp["dx-"] = np.where((df_temp["Low"]>0.0) & (df_temp["Low"]>df_temp["High"]), df_temp["Low"], 0.0)
+    df_temp["dx+"] = np.where((df_temp["High"] > 0.0) & (df_temp["High"] > df_temp["Low"]), df_temp["High"], 0.0)
+    df_temp["dx-"] = np.where((df_temp["Low"] > 0.0) & (df_temp["Low"] > df_temp["High"]), df_temp["Low"], 0.0)
     df_temp["smooth_dx+"] = df_temp["dx+"].rolling(window=window, min_periods=window).mean()
     df_temp["smooth_dx-"] = df_temp["dx-"].rolling(window=window, min_periods=window).mean()
     df_temp["ATR"] = atr(high, low, close, window)
@@ -60,4 +60,4 @@ def adx(high, low, close, window):
             break
     df_temp["Cross"] = pd.Series(cross, index=df_temp.index)
     df_temp["ADX"] = df_temp["DX"].rolling(window=window, min_periods=window).mean()
-    return df_temp
+    return df_temp[["DMI+", "DMI-", "Cross", "ADX"]]

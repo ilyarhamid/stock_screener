@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from ta.trend import ADXIndicator
 
 
 def rsi(close, window):
@@ -53,5 +52,12 @@ def adx(high, low, close, window):
     df_temp["DMI+"] = 100.0 * df_temp["smooth_dx+"] / df_temp["ATR"]
     df_temp["DMI-"] = 100.0 * df_temp["smooth_dx-"] / df_temp["ATR"]
     df_temp["DX"] = 100.0 * abs(df_temp["DMI+"] - df_temp["DMI-"]) / abs(df_temp["DMI+"] + df_temp["DMI-"])
+    df_temp["DIFF"] = df_temp["DMI+"] - df_temp["DMI-"]
+    cross = np.zeros(len(df_temp["DMI+"]))
+    for i in range(1, 4):
+        if df_temp["DIFF"][-1] * df_temp["DIFF"].shift(i)[-1] < 0.0:
+            cross[-1] = df_temp["DIFF"][-1] * i / abs(df_temp["DIFF"][-1])
+            break
+    df_temp["Cross"] = pd.Series(cross, index=df_temp.index)
     df_temp["ADX"] = df_temp["DX"].rolling(window=window, min_periods=window).mean()
     return df_temp

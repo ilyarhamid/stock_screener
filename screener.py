@@ -7,6 +7,7 @@ import pandas as pd
 def tick_process(ticker, param_dic):
     t = yf.Ticker(ticker)
     df = t.history("200d")
+    df.dropna(inplace=True)
     df["Volume_ave"] = df["Volume"].ewm(alpha=1 / param_dic["vol_window"], min_periods=param_dic["vol_window"]).mean()
     df["Volume_above_ave"] = df["Volume"] > df["Volume_ave"]
     df["RSI"] = rsi(df["Close"], param_dic["RSI_window"])

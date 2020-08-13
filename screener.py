@@ -1,4 +1,3 @@
-import yfinance as yf
 from indicators import rsi, stochastic, adx
 from datetime import datetime, timedelta
 import numpy as np

@@ -1,12 +1,55 @@
 import yfinance as yf
 from indicators import rsi, stochastic, adx
+from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
 
+def datetime_index(col):
+    s = "%s %s" % (datetime.strftime(col["date"], "%Y-%m-%d"), col["minute"])
+    return datetime.strptime(s, "%Y-%m-%d %H:%M")
+
+
+def process_data(df):
+    df["index"] = df.apply(datetime_index, axis=1)
+    df.set_index("index", inplace=True)
+    df = df[["open", "high", "low", "close", "volume"]]
+    return df
+
+
+def retrieve_data(ticker, param_dic):
+    token = open(param_dic["token_path"]).readline()[:-1]
+    today = datetime.today()
+    yesterday = today - timedelta(days=1)
+    if param_dic["time_frame"] == "1m" or param_dic["time_frame"] == "5m":
+        url1 = f"https://cloud.iexapis.com/stable/stock/{ticker}/chart/date/" \
+               f"{datetime.strftime(today, '%Y%m%d')}?token={token}"
+        url2 = f"https://cloud.iexapis.com/stable/stock/{ticker}/chart/date/" \
+               f"{datetime.strftime(yesterday, '%Y%m%d')}?token={token}"
+        df = process_data(pd.concat([pd.read_json(url1), pd.read_json(url2)]))
+        if param_dic["time_frame"] == "5m":
+            df = df.resample('5T').agg({'open': 'first',
+                                        'high': 'max',
+                                        'low': 'min',
+                                        'close': 'last',
+                                        'volume': 'sum'})
+        return df
+    elif param_dic["time_frame"] == "1h" or param_dic["time_frame"] == "4h":
+        url = f"https://cloud.iexapis.com/stable/stock/{ticker}/chart/1mm?token={token}"
+        df = process_data(pd.read_json(url))
+        df = df.resample(param_dic["time_frame"]).agg({'open': 'first',
+                                                       'high': 'max',
+                                                       'low': 'min',
+                                                       'close': 'last',
+                                                       'volume': 'sum'}).dropna()
+        return df
+    elif param_dic["time_frame"] == "1d":
+        url = f"https://cloud.iexapis.com//stable/stock/{ticker}/chart/1y?token={token}"
+        return process_data(pd.read_json(url))
+
+
 def tick_process(ticker, param_dic):
-    t = yf.Ticker(ticker)
-    df = t.history("200d")
+    df = retrieve_data(ticker, param_dic)
     df["Volume_ave"] = df["Volume"].ewm(alpha=1 / param_dic["vol_window"], min_periods=param_dic["vol_window"]).mean()
     df["Volume_above_ave"] = df["Volume"] > df["Volume_ave"]
     df["RSI"] = rsi(df["Close"], param_dic["RSI_window"])

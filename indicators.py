@@ -63,5 +63,4 @@ def adx(high, low, close, window):
             break
     df_temp["Cross"] = pd.Series(cross, index=df_temp.index)
     df_temp["ADX"] = df_temp["DX"].rolling(window=window, min_periods=window).mean()
-    print(df_temp)
     return df_temp[["DMI+", "DMI-", "Cross", "ADX"]]

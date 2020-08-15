@@ -58,9 +58,10 @@ def adx(high, low, close, window):
     df_temp["DIFF"] = df_temp["DMI+"] - df_temp["DMI-"]
     cross = np.zeros(len(df_temp["DMI+"]))
     for i in range(1, 4):
-        if df_temp["DIFF"][-1] * df_temp["DIFF"].shift(i)[-1] < 0.0:
-            cross[-1] = df_temp["DIFF"][-1] * i / abs(df_temp["DIFF"][-1])
+        if df_temp["DIFF"].iloc[-1] * df_temp["DIFF"].shift(i).iloc[-1] < 0.0:
+            cross[-1] = df_temp["DIFF"].iloc[-1] * i / abs(df_temp["DIFF"].iloc[-1])
             break
     df_temp["Cross"] = pd.Series(cross, index=df_temp.index)
     df_temp["ADX"] = df_temp["DX"].rolling(window=window, min_periods=window).mean()
+    print(df_temp)
     return df_temp[["DMI+", "DMI-", "Cross", "ADX"]]

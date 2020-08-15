@@ -17,7 +17,7 @@ def process_data(df):
 
 
 def retrieve_data(ticker, param_dic):
-    token = open(param_dic["token_path"]).readline()[:-1]
+    token = open(param_dic["token_path"]).readline()
     today = datetime.today()
     yesterday = today - timedelta(days=1)
     if param_dic["time_frame"] == "1m" or param_dic["time_frame"] == "5m":
@@ -32,7 +32,7 @@ def retrieve_data(ticker, param_dic):
                                         'low': 'min',
                                         'close': 'last',
                                         'volume': 'sum'})
-        return df
+        return df.dropna()
     elif param_dic["time_frame"] == "1h" or param_dic["time_frame"] == "4h":
         url = f"https://cloud.iexapis.com/stable/stock/{ticker}/chart/1mm?token={token}"
         df = process_data(pd.read_json(url))
@@ -43,26 +43,27 @@ def retrieve_data(ticker, param_dic):
                                                        'volume': 'sum'}).dropna()
         return df
     elif param_dic["time_frame"] == "1d":
-        url = f"https://cloud.iexapis.com//stable/stock/{ticker}/chart/1y?token={token}"
-        return process_data(pd.read_json(url))
+        url = "https://cloud.iexapis.com//stable/stock/%s/chart/1y?token=%s" % (ticker, token)
+        df = pd.read_json(url)[["open", "high", "low", "close", "volume"]]
+        return df
 
 
 def tick_process(ticker, param_dic):
     df = retrieve_data(ticker, param_dic)
-    df["Volume_ave"] = df["Volume"].ewm(alpha=1 / param_dic["vol_window"], min_periods=param_dic["vol_window"]).mean()
-    df["Volume_above_ave"] = df["Volume"] > df["Volume_ave"]
-    df["RSI"] = rsi(df["Close"], param_dic["RSI_window"])
+    df["Volume_ave"] = df["volume"].ewm(alpha=1 / param_dic["vol_window"], min_periods=param_dic["vol_window"]).mean()
+    df["Volume_above_ave"] = df["volume"] > df["Volume_ave"]
+    df["RSI"] = rsi(df["close"], param_dic["RSI_window"])
     df["RSI_ave"] = df["RSI"].ewm(alpha=1 / param_dic["RSI_ave"], min_periods=param_dic["RSI_ave"]).mean()
     rsi_conditions = [df["RSI"] > param_dic["RSI_hi"], df["RSI"] < param_dic["RSI_lo"]]
     rsi_choices = [1, -1]
     df["RSI_hilo"] = np.select(rsi_conditions, rsi_choices, default=0)
-    df["Stoch_k"], df["Stoch_d"] = stochastic(df["High"], df["Low"], df["Close"], param_dic["Stochastic"])
+    df["Stoch_k"], df["Stoch_d"] = stochastic(df["high"], df["low"], df["close"], param_dic["Stochastic"])
     stoch_conditions = [df["Stoch_k"] > param_dic["Stoch_hi"], df["Stoch_k"] < param_dic["Stoch_lo"]]
     stoch_choices = [1, -1]
     df["Stoch_hilo"] = np.select(stoch_conditions, stoch_choices, default=0)
-    df_temp = adx(df["High"], df["Low"], df["Close"], param_dic["ADX_window"])
+    df_temp = adx(df["high"], df["low"], df["close"], param_dic["ADX_window"])
     df = pd.concat([df, df_temp], axis=1)
-    df = df[["Open", "High", "Low", "Close", "Volume", "Volume_above_ave",
+    df = df[["open", "high", "low", "close", "volume", "Volume_above_ave",
              "RSI", "RSI_ave", "RSI_hilo",
              "Stoch_k", "Stoch_d", "Stoch_hilo",
              "DMI+", "DMI-", "Cross", "ADX"]]

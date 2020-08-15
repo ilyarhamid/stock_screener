@@ -40,12 +40,12 @@ def retrieve_data(ticker, param_dic):
                                                        'high': 'max',
                                                        'low': 'min',
                                                        'close': 'last',
-                                                       'volume': 'sum'}).dropna()
-        return df
+                                                       'volume': 'sum'})
+        return df.dropna()
     elif param_dic["time_frame"] == "1d":
         url = "https://cloud.iexapis.com//stable/stock/%s/chart/1y?token=%s" % (ticker, token)
         df = pd.read_json(url)[["open", "high", "low", "close", "volume"]]
-        return df
+        return df.dropna()
 
 
 def tick_process(ticker, param_dic):
